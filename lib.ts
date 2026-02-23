@@ -24,7 +24,7 @@ export interface BrokenLink extends LinkResult {
 const MARKDOWN_LINK = /\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g;
 const HTML_ANCHOR = /<a\s[^>]*href=["'](https?:\/\/[^"']+)["'][^>]*>/gi;
 const HTML_IMG = /<img\s[^>]*src=["'](https?:\/\/[^"']+)["'][^>]*>/gi;
-const PLAIN_URL = /(https?:\/\/[^\s<>\)\]"'`,;]+)/g;
+const PLAIN_URL = /(https?:\/\/[^\s<>)\]"'`,;]+)/g;
 
 // --- Helper functions ---
 
@@ -108,6 +108,16 @@ export async function extractLinks(filePath: string): Promise<LinkResult[]> {
   return extractLinksFromContent(content, filePath);
 }
 
+const createResult = (
+  ok: boolean,
+  status: number | null,
+  issue = "",
+): ValidationResult => ({
+  ok,
+  status,
+  issue,
+});
+
 export async function validateLink(url: string): Promise<ValidationResult> {
   const timeout = 10_000;
 
@@ -119,44 +129,27 @@ export async function validateLink(url: string): Promise<ValidationResult> {
       signal: AbortSignal.timeout(timeout),
     });
 
-    if (headRes.status === 405) {
-      // Method not allowed — fallback to GET
-      const getRes = await fetch(url, {
-        method: "GET",
-        redirect: "follow",
-        signal: AbortSignal.timeout(timeout),
-      });
-      if (getRes.ok) return { ok: true, status: getRes.status, issue: "" };
-      return {
-        ok: false,
-        status: getRes.status,
-        issue: `${getRes.status} ${getRes.statusText}`,
-      };
+    if (headRes.ok) {
+      return createResult(true, headRes.status);
     }
 
-    if (headRes.ok) return { ok: true, status: headRes.status, issue: "" };
-    return {
-      ok: false,
-      status: headRes.status,
-      issue: `${headRes.status} ${headRes.statusText}`,
-    };
-  } catch (err: unknown) {
-    // HEAD failed entirely — try GET as fallback
-    try {
-      const getRes = await fetch(url, {
-        method: "GET",
-        redirect: "follow",
-        signal: AbortSignal.timeout(timeout),
-      });
-      if (getRes.ok) return { ok: true, status: getRes.status, issue: "" };
-      return {
-        ok: false,
-        status: getRes.status,
-        issue: `${getRes.status} ${getRes.statusText}`,
-      };
-    } catch (fallbackErr: unknown) {
-      return { ok: false, status: null, issue: classifyError(fallbackErr) };
+    const getRes = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      signal: AbortSignal.timeout(timeout),
+    });
+
+    if (getRes.ok) {
+      return createResult(true, getRes.status);
     }
+
+    return createResult(
+      false,
+      getRes.status,
+      `${getRes.status} ${getRes.statusText}`,
+    );
+  } catch (err: unknown) {
+    return createResult(false, null, classifyError(err));
   }
 }
 
@@ -191,7 +184,6 @@ export async function validateInBatches(
   batchSize = 10,
 ): Promise<Map<string, ValidationResult>> {
   const results = new Map<string, ValidationResult>();
-
   for (let i = 0; i < urls.length; i += batchSize) {
     const batch = urls.slice(i, i + batchSize);
     const batchResults = await Promise.all(
@@ -204,7 +196,6 @@ export async function validateInBatches(
       results.set(url, result);
     }
   }
-
   return results;
 }
 
