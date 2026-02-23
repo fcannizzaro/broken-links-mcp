@@ -1,0 +1,44 @@
+{
+  "name": "@fcannizzaro/broken-links-mcp",
+  "version": "1.0.2",
+  "description": "MCP server that scans directories for broken HTTP links in markdown, HTML, and plain text files",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "broken-links-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "author": {
+    "name": "Francesco Saverio Cannizzaro (fcannizzaro)",
+    "url": "https://fcannizzaro.com"
+  },
+  "bugs": {
+    "url": "https://github.com/fcannizzaro/broken-links-mcp/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fcannizzaro/broken-links-mcp"
+  },
+  "scripts": {
+    "start": "bun run index.ts",
+    "build": "bun build index.ts --target=node --outdir=dist",
+    "test": "bun test"
+  },
+  "keywords": [
+    "mcp",
+    "broken-links",
+    "link-checker",
+    "markdown",
+    "html"
+  ],
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0"
+  }
+}

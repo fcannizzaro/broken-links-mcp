@@ -1,0 +1,7 @@
+Some notes with links.
+
+A valid URL: https://example.com
+Another valid one: https://www.google.com
+
+A broken URL: https://httpbin.org/status/404
+A non-existent domain: https://this-domain-does-not-exist-abc123.com
